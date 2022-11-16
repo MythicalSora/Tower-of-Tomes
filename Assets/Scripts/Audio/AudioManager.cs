@@ -2,16 +2,17 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Unity.VisualScripting;
 using UnityEditor;
 using UnityEngine;
 
 public class AudioManager : MonoBehaviour
 {
-    private Dictionary<string, AudioClip> music;
-    private Dictionary<string, AudioClip> sounds;
+    private Dictionary<string, AudioClip> music = new();
+    private Dictionary<string, AudioClip> sounds = new();
     
-    [SerializeField] private AudioClip overworldMusic, battleMusic;
+    // [SerializeField] private AudioClip overworldMusic, battleMusic;
 
     [SerializeField] private Dictionary<int, int> deez;
 
@@ -33,16 +34,16 @@ public class AudioManager : MonoBehaviour
     void Start()
     {
         AddFiles();
-        soundSource = gameObject.AddComponent<AudioSource>();
+        // soundSource = gameObject.AddComponent<AudioSource>();
         track1 = gameObject.AddComponent<AudioSource>();
         track2 = gameObject.AddComponent<AudioSource>();
         
         track1.loop = true;
-        track1.clip = overworldMusic;
+        track1.clip = music.FirstOrDefault(a => a.Key == "OverworldMusicAdditive_Demo3.ogg").Value;
         track1.Play();
         
         track2.loop = true;
-        track2.clip = battleMusic;
+        track2.clip = music.FirstOrDefault(a => a.Key == "CombatMusicAdditive_Demo3.ogg").Value;
         track2.volume = 0;
         track2.Play();
 
@@ -56,24 +57,46 @@ public class AudioManager : MonoBehaviour
 
     private void AddFiles()
     {
-        DirectoryInfo src = new("Assets/AudioFiles/OST");
-        FileInfo[] files = src.GetFiles();
-        foreach (var file in files)
+        DirectoryInfo musicFiles = new("Assets/Resources/Audio/AudioFiles/OST");
+        DirectoryInfo soundFiles = new("Assets/Resources/Audio/AudioFiles/Sound");
+        FileInfo[] mFiles = musicFiles.GetFiles();
+        FileInfo[] sFiles = soundFiles.GetFiles();
+        foreach (var file in mFiles)
         {
             //AudioClip clip = (AudioClip)Resources.Load(".@\\"+file.Name);
             //music.Add(file.Name, clip);
-            Debug.Log(file.Name);
+            AddFile(file.Name, "OST");
+        }
+        
+        foreach (var file in sFiles)
+        {
+            //AudioClip clip = (AudioClip)Resources.Load(".@\\"+file.Name);
+            //music.Add(file.Name, clip);
+            AddFile(file.Name, "Sound");
         }
     }
 
-    public void AddSound(string key,AudioClip ac)
+    private void AddFile(string fileName, string type)
     {
-        sounds.Add(key, ac);
+        switch (type)
+        {
+            case "OST":
+                music.Add(fileName, Resources.Load<AudioClip>("Audio/AudioFiles/OST/" + fileName));
+                break;
+            case "Sound":
+                sounds.Add(fileName, Resources.Load<AudioClip>("Audio/AudioFiles/Sound/" + fileName));
+                break;
+        }
     }
 
-    public void addMusic(string key, AudioClip ac)
+    public void AddSound(string key)
     {
-        music.Add(key, ac);
+        AddFile(key, "Sound");
+    }
+
+    public void AddMusic(string key)
+    {
+        AddFile(key, "OST");
     }
 
     public void SwapBgTrack()
@@ -113,7 +136,7 @@ public class AudioManager : MonoBehaviour
 
         if (Input.GetKeyDown("e"))
         {
-            //soundSource.PlayOneShot(sounds[0], 0.5f);
+            soundSource.PlayOneShot(sounds.First().Value, 0.5f);
         }
     }
 }
